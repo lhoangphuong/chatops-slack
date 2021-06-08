@@ -1,5 +1,5 @@
-import requests
 import os
+import requests
 from slack import RTMClient
 from slack import WebClient
 from slack.errors import SlackApiError
@@ -16,32 +16,32 @@ class Conversation:
             text=text,
         )
 
-def docker_ps_command():
+def docker_ps_command(args):
     cmd = 'docker ps'
     print(f'Executing {cmd}')
     stream = os.popen(cmd)
     return stream.read()
 
-def docker_image_command():
+def docker_image_command(args):
     cmd = 'docker image ls'
     print(f'Executing {cmd}')
     stream = os.popen(cmd)
     return stream.read()
 
-def joke_of_the_day_command():
+def joke_of_the_day_command(args):
     cmd = 'curl -H "Accept: text/plain" https://icanhazdadjoke.com/'
     print(f'Executing {cmd}')
     stream = os.popen(cmd)
     return stream.read()
 
-def howdoi_command(question):
-    cmd = f'howdoi {question}'
+def howdoi_command(args):
+    cmd = f'howdoi {args}'
     print(f'Executing {cmd}')
     stream = os.popen(cmd)
     return stream.read()
 
 welcome_message = '''
-Hi there <@{user}>. I'm your friendly neighbourhood DevOps bot. 
+Hi there <@{user}>. I'm your friendly neighbourhood DevOps bot. How I can help you with?
 
 List all docker container
 `{me} docker ps`\n
@@ -74,7 +74,6 @@ def process_command(**payload):
     web_client = payload['web_client']
     # ignore service messages, like joining a channel
     is_service = 'subtype' in data and data['subtype'] is not None
-
     if not is_service and 'text' in data:
         channel_id = data['channel']
         thread_ts = data['ts']
@@ -87,35 +86,24 @@ def process_command(**payload):
         conv = Conversation(web_client, channel_id, user)
         if len(tokens) > 1 and me =='<@U024827Q18S>': # user id of the chat bot. might need to change if you use other chatbot :D
             print(tokens)
-            # first token is my userid, ther rest will be the command e.g. tell a joke
-            command = ' '.join(tokens[1:len(tokens)+1])
-            print('Received command: ' + command)
-            if 'howdoi' in command:
-                question = ' '.join(tokens[2:len(tokens)+1])
-                print('The question is: '+question)
-                try:
-                    # execute the command
-                    result = howdoi_command(question)
-                    if result is not None:
-                        # and return the value from the
-                        # command back to the user
-                        conv.msg(result)
-                except Exception as e:
-                    conv.msg(str(e))
-
-            elif command in commands:
-                # get the actual command executor
-                command_func = commands[command]
-                try:
-                    # execute the command
-                    result = command_func()
-                    if result is not None:
-                        # and return the value from the
-                        # command back to the user
-                        conv.msg(result)
-                except Exception as e:
-                    conv.msg(str(e))
-
+            # first token is my userid, ther rest will be the command + arguments e.g. tell a joke
+            request = ' '.join(tokens[1:len(tokens)+1])
+            print('Received request: ' + request)
+            if any(s in request for s in commands):
+                pool = (s for s in commands if s in request)
+                for s in pool:
+                    # get the actual command executor
+                    command_func = commands[s]
+                    args = request.replace(s, '')
+                    try:
+                        # execute the command
+                        result = command_func(args)
+                        if result is not None:
+                            # and return the value from the
+                            # command back to the user
+                            conv.msg(result)
+                    except Exception as e:
+                        conv.msg(str(e))
             else:
                 # show remind message
                 web_client.chat_postMessage(
