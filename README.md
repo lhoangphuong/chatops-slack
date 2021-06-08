@@ -9,8 +9,7 @@ docker build -t chatbot .
 ## Run docker 
 (Bot use token strings begin with xoxb-)
 ```sh
-docker run -d --rm --name=chatbot \
--e="SLACK_API_TOKEN=<put_you_chatbot_api_token_here>" \
+docker run -d --name=chatbot \
 -v /var/run/docker.sock:/var/run/docker.sock \
-chatbot
+-e="SLACK_API_TOKEN=<put_you_chatbot_api_token_here>" chatbot
 ```
