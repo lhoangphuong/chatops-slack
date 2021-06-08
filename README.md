@@ -1,6 +1,6 @@
 # chatops-slack
 Create a chatbot on Slack to practice ChatOps for DevOps guy :D
-![icon]https://www.loggly.com/wp-content/uploads/2017/02/BuildingaChatOpsBotwithSlackandLoggly-03.png
+![icon](https://www.loggly.com/wp-content/uploads/2017/02/BuildingaChatOpsBotwithSlackandLoggly-03.png)
 
 ## Build the image
 ```sh
