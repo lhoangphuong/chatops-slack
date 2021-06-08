@@ -4,6 +4,18 @@ from slack import RTMClient
 from slack import WebClient
 from slack.errors import SlackApiError
 
+class Conversation:
+    def __init__(self, web_client, channel, user):
+        self.web_client = web_client
+        self.channel = channel
+        self.user = user
+
+    def msg(self, text):
+        self.web_client.chat_postMessage(
+            channel=self.channel,
+            text=text,
+        )
+
 def docker_ps_command():
     cmd = 'docker ps'
     print(f'Executing {cmd}')
@@ -28,27 +40,20 @@ def howdoi_command(question):
     stream = os.popen(cmd)
     return stream.read()
 
-    
-class Conversation:
-    def __init__(self, web_client, channel, user):
-        self.web_client = web_client
-        self.channel = channel
-        self.user = user
-
-    def msg(self, text):
-        self.web_client.chat_postMessage(
-            channel=self.channel,
-            text=text,
-
-        )
-
-welcome = '''
+welcome_message = '''
 Hi there <@{user}>. I'm your friendly neighbourhood DevOps bot. 
 
-`{me} docker ps`                List all docker container   
-`{me} docker image ls`          List all docker image        
-`{me} tell a joke`              Tell a joke          
-`{me} howdoi` <you_question>    Ask me anything
+List all docker container
+`{me} docker ps`\n
+
+List all docker image
+`{me} docker image ls`\n
+
+Tell a joke             
+`{me} tell a joke`\n
+
+Ask me anything                    
+`{me} howdoi` <you_question> \n
 '''
 
 remind_message = '''
@@ -57,8 +62,8 @@ Give a valid input, please!?
 '''
 
 commands = {
-    'docker ps': docker_ps_command,
-    "docker image ls": docker_image_command,
+#    "docker ps": docker_ps_command,
+#    "docker image ls": docker_image_command,
     "tell a joke": joke_of_the_day_command,
     "howdoi" : howdoi_command
 }
@@ -67,7 +72,6 @@ commands = {
 def process_command(**payload):
     data = payload['data']
     web_client = payload['web_client']
-    #print(payload)
     # ignore service messages, like joining a channel
     is_service = 'subtype' in data and data['subtype'] is not None
 
@@ -81,18 +85,17 @@ def process_command(**payload):
 
         # object to track the conversation state
         conv = Conversation(web_client, channel_id, user)
-        if len(tokens) > 1:
+        if len(tokens) > 1 and me =='<@U024827Q18S>': # user id of the chat bot. might need to change if you use other chatbot :D
             print(tokens)
-            # first token is my userid, second will be the command e.g. logs
+            # first token is my userid, ther rest will be the command e.g. tell a joke
             command = ' '.join(tokens[1:len(tokens)+1])
-            print('Received command:' + command)
+            print('Received command: ' + command)
             if 'howdoi' in command:
                 question = ' '.join(tokens[2:len(tokens)+1])
                 print('The question is: '+question)
-                command_func = howdoi_command
                 try:
                     # execute the command
-                    result = command_func(question)
+                    result = howdoi_command(question)
                     if result is not None:
                         # and return the value from the
                         # command back to the user
@@ -114,13 +117,13 @@ def process_command(**payload):
                     conv.msg(str(e))
 
             else:
-                # show welcome message
+                # show remind message
                 web_client.chat_postMessage(
                     conv.msg(remind_message.format(user=user, me=me))
                 )
-        else:
+        elif len(tokens) == 1 and me =='<@U024827Q18S>':
             # show welcome message
-            conv.msg(welcome.format(user=user, me=me))
+            conv.msg(welcome_message.format(user=user, me=me))
 
 def main():
     rtm_client = RTMClient(token=os.environ["SLACK_API_TOKEN"])
