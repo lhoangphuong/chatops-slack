@@ -5,6 +5,8 @@ WORKDIR /usr/src/app
 # Install python3
 RUN apt-get update && apt-get install -y \
 python3 python3-pip && \
+pip3 install --upgrade pip && \
+pip3 install howdoi && \
 # Install docker
 apt update -y && \
 apt install apt-transport-https ca-certificates curl gnupg2 software-properties-common -y && \
